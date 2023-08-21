@@ -3,6 +3,7 @@ package com.example.app_avatar
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.util.Patterns
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
@@ -65,13 +66,66 @@ class LoginActivity : AppCompatActivity() {
 
 
     private fun setupView() {
+
+        binding.btnlogin.setOnClickListener {
+            signInWithEmailPassword()
+        }
         binding.btnGoogle.setOnClickListener {
             signInWithGoogle()
         }
+        binding.btnSingUp.setOnClickListener {
+            signUpWithEmailPassword()
+        }
 
     }
+
+    private fun signUpWithEmailPassword() {
+        val email = binding.txtUser.editText?.text.toString()
+        val password = binding.txtPass.editText?.text.toString()
+
+        if (validateInputs(email,password)){
+            firebaseAuth.createUserWithEmailAndPassword(email,password)
+                .addOnCompleteListener(this){
+                    if (it.isSuccessful){
+                        Toast.makeText(this, "Usuario Creado exitosamente ", Toast.LENGTH_SHORT).show()
+                    }else{
+                        Toast.makeText(this, "Usuario no creado ", Toast.LENGTH_SHORT).show()
+                    }
+                }
+
+        }
+    }
+
+     private fun signInWithEmailPassword() {
+
+         val email = binding.txtUser.editText?.text.toString()
+         val password = binding.txtPass.editText?.text.toString()
+
+         signInFirebaseWihEmail(email,password)
+
+     }
+
+     private fun signInFirebaseWihEmail(email:String,password: String) {
+         firebaseAuth.signInWithEmailAndPassword(email,password)
+             .addOnCompleteListener(this){
+                 if (it.isSuccessful){
+                     val user=firebaseAuth.currentUser
+                     val intent=Intent(this,MainActivity::class.java)
+                     startActivity(intent)
+                     finish()
+                 }else{
+                     Toast.makeText(this, "El Usuario no se Encontro", Toast.LENGTH_SHORT).show()
+                 }
+             }
+     }
+
+
+    private fun isCredentialsValidated(): Boolean {
+        return validateInputs(binding.txtUser.editText?.text.toString(),binding.txtPass.editText?.text.toString())
+    }
+
     private fun signInWithGoogle(){
-        val googleSignOptions = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN).requestIdToken("105850151877951714941")
+        val googleSignOptions = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN).requestIdToken(getString(R.string.web_client_id))
             .requestEmail().build()
         val client:GoogleSignInClient = GoogleSignIn.getClient(this,googleSignOptions)
         val intent = client.signInIntent
@@ -79,6 +133,13 @@ class LoginActivity : AppCompatActivity() {
 
     }
 
+    private fun validateInputs(email:String,password:String):Boolean{
+
+        val isEmailOk=email.isNotEmpty()&& Patterns.EMAIL_ADDRESS.matcher(email).matches()
+        val isPasswordOk=password.length>=6
+        return isPasswordOk && isEmailOk
+
+    }
 
 
 }
